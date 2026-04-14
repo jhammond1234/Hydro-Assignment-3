@@ -1,0 +1,50 @@
+name: HW3env
+channels:
+  - pytorch
+  - conda-forge
+dependencies:
+  # Python
+  - python=3.10
+
+  # PyTorch stack
+  - pytorch
+  - torchvision
+  - torchaudio
+  - cpuonly
+
+  # ML / data science
+  - scikit-learn
+  - pandas
+  - matplotlib
+  - xarray-spatial
+
+  # HyRiver / hydrology data-acquisition
+  - pygeohydro
+  - pynhd
+  - pynldas2
+  - py3dep
+  - dataretrieval
+  - earthaccess
+  - earthengine-api
+  - geemap
+
+  # Geospatial
+  - geopandas
+  - contextily
+
+  # Jupyter / notebook
+  - ipykernel
+  - nbformat
+  - ipywidgets
+  - widgetsnbextension
+  - iprogress
+
+  # SSL / certs
+  - ca-certificates
+  - certifi
+  - openssl
+
+  # pip fallback
+  - pip
+  - pip:
+    - pydaymet>=0.13.7
