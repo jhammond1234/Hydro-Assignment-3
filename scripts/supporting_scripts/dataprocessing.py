@@ -76,7 +76,7 @@ import os
 def processSNOTEL(site, stateab):
     print(site)
 
-    sitedf = pd.read_csv(f"files/SNOTEL/df_{site}.csv")
+    sitedf = pd.read_csv(f"../data/SNOTEL/df_{site}.csv")
 
      # Convert datetime and add Water_Year column
     sitedf['datetime'] = pd.to_datetime(sitedf['datetime'])
@@ -136,7 +136,7 @@ def processSNOTEL(site, stateab):
 
 
     # Save processed data
-    OutputFolder = 'files/SNOTEL_processed'
+    OutputFolder = '../data/SNOTEL_processed'
     if not os.path.exists(OutputFolder):
         os.makedirs(OutputFolder)
     df.to_csv(f'{OutputFolder}/{site}_processed.csv')
