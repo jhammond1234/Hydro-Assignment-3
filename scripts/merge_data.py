@@ -27,6 +27,7 @@ USGS_GAGE_IDS = [
 SNOTEL_FOLDER = "../data/SNOTEL"
 DAYMET_FOLDER = "../data/PyDayMet"
 NWIS_FOLDER = "../data/NWIS"
+BASIN_INFO_PATH = "../data/basin_info/basin_info_all_sites.csv"
 OUTPUT_FOLDER = "../data/merged"
 
 
@@ -47,8 +48,9 @@ def load_snotel(gage_id: str) -> pd.DataFrame:
         filepath = os.path.join(SNOTEL_FOLDER, filename)
         df = pd.read_csv(filepath)
 
+
         # Skip files not belonging to this gage
-        if "gage_id" in df.columns and not (df["gage_id"].astype(str) == str(gage_id)).any():
+        if "gage_id" in df.columns and not (df["gage_id"].astype(str).str.lstrip('0') == str(gage_id).lstrip('0')).any():
             continue
 
         # Parse date and set index
@@ -114,7 +116,12 @@ def load_streamflow(gage_id: str) -> pd.DataFrame:
           f"{df.index.min().date()} to {df.index.max().date()})")
     return df
 
-
+def load_basin_attrs() -> pd.DataFrame:
+    """Load static basin attributes."""
+    df = pd.read_csv(BASIN_INFO_PATH, index_col=0)
+    df.index = df.index.astype(str).str.lstrip('0')
+    print(f"  Loaded basin attributes for {len(df)} sites")
+    return df
 # --- Merge Function ---
 
 def merge_site(gage_id: str) -> pd.DataFrame:
@@ -127,6 +134,16 @@ def merge_site(gage_id: str) -> pd.DataFrame:
     snotel_df = load_snotel(gage_id)
     daymet_df = load_daymet(gage_id)
     streamflow_df = load_streamflow(gage_id)
+
+    # Load basin attributes and repeat for every row in this site
+    basin_attrs = load_basin_attrs()
+    lookup_id = str(gage_id).lstrip('0')
+    if lookup_id in basin_attrs.index:
+        for col in basin_attrs.columns:
+            if col != 'gage_id':
+                daymet_df[col] = basin_attrs.loc[lookup_id, col]
+    else:
+        print(f"  WARNING: No basin attributes found for gage {gage_id}")
 
     # Collect non-empty dataframes for date alignment
     dfs = {name: df for name, df in {

@@ -40,6 +40,14 @@ PROCESSED_FOLDER = "../data/SNOTEL_processed"
 STATIONS_URL = "https://raw.githubusercontent.com/egagli/snotel_ccss_stations/main/all_stations.geojson"
 DATA_BASE_URL = "https://raw.githubusercontent.com/egagli/snotel_ccss_stations/refs/heads/main/data"
 
+# The Basin Deliniation was malfuncioning so I had to manually add some stations
+MANUAL_STATIONS = {
+    "09217900": ["1163_UT", "1162_UT"],
+    "09266500": ["833_UT"],
+    "09299500": ["396_UT"],
+    "09292000": ["481_UT", "566_UT", "1116_UT"],
+    "09289500": ["513_UT"],
+}
 
 # --- Helper Functions ---
 
@@ -60,19 +68,18 @@ def get_basin_geometry(gage_id: str) -> gpd.GeoDataFrame:
     return basin
 
 
-def find_stations_in_basin(basin: gpd.GeoDataFrame, all_stations: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    """Return stations whose geometry falls within the basin polygon."""
+def find_stations_in_basin(basin: gpd.GeoDataFrame, all_stations: gpd.GeoDataFrame, gage_id: str) -> gpd.GeoDataFrame:
+    """Return stations for a basin, using manual override if specified."""
+    if gage_id in MANUAL_STATIONS:
+        print(f"  Using manual station list for gage {gage_id}")
+        codes = MANUAL_STATIONS[gage_id]
+        # Append _SNTL suffix to match the actual index format
+        full_codes = [f"{c}_SNTL" for c in codes]
+        return all_stations[all_stations.index.isin(full_codes)].reset_index(drop=False)
+    
+    # Otherwise fall back to spatial search
     gdf_in_basin = all_stations[all_stations.geometry.within(basin.geometry.iloc[0])].copy()
     gdf_in_basin.reset_index(drop=False, inplace=True)
-
-    # Format dates as strings
-    for col in ["beginDate", "endDate"]:
-        if col in gdf_in_basin.columns:
-            gdf_in_basin[col] = [
-                datetime.strftime(gdf_in_basin[col][i], "%Y-%m-%d")
-                for i in range(len(gdf_in_basin))
-            ]
-
     return gdf_in_basin
 
 
@@ -103,7 +110,8 @@ def process_site(gage_id: str, all_stations: gpd.GeoDataFrame, state_ab: str) ->
     """
     print(f"\nProcessing gage: {gage_id}")
     basin = get_basin_geometry(gage_id)
-    stations_in_basin = find_stations_in_basin(basin, all_stations)
+    stations_in_basin = find_stations_in_basin(basin, all_stations, gage_id)
+
 
     if stations_in_basin.empty:
         print(f"  No SNOTEL stations found in basin for gage {gage_id}")
