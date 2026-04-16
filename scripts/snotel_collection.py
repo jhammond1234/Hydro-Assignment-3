@@ -82,8 +82,9 @@ def fetch_snotel_csv(site_code: str, state_ab: str) -> pd.DataFrame:
     return pd.read_csv(url)
 
 
-def save_raw(df: pd.DataFrame, site_code: str, state_ab: str) -> None:
+def save_raw(df: pd.DataFrame, site_code: str, state_ab: str, gage_id: str) -> None:
     """Save raw SNOTEL data to the output folder."""
+    df["gage_id"] = gage_id  # tag so merge script knows which basin this belongs to
     os.makedirs(OUTPUT_FOLDER, exist_ok=True)
     path = f"{OUTPUT_FOLDER}/df_{site_code}.csv"
     df.to_csv(path, index=False)
@@ -119,7 +120,7 @@ def process_site(gage_id: str, all_stations: gpd.GeoDataFrame, state_ab: str) ->
             print(f"  Fetching {full_code}...", end="")
             raw_df = fetch_snotel_csv(site_code, state_ab)
             print("done")
-            save_raw(raw_df, site_code, state_ab)
+            save_raw(raw_df, site_code, state_ab, gage_id)
 
             # Process using your existing dataprocessing module
             os.makedirs(PROCESSED_FOLDER, exist_ok=True)
